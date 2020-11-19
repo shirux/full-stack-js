@@ -126,7 +126,7 @@ export default class UserSignUp extends React.Component {
                     />
                 </div>
                 <p>&nbsp;</p>
-                <p>Already have a user account? <Link to="sign-in">Click here</Link> to sign in!</p>
+                <p>Already have a user account? <Link to="signin">Click here</Link> to sign in!</p>
                 </div>
             </div>
         );

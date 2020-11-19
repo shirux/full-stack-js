@@ -1,37 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import  ReactMarkdown from 'react-markdown'
 import Axios from 'axios';
 import config from './Context/config';
 
-const CourseDetail = ({ match, context, history }) => {
+/**
+ * Refactored to class
+ */
+class CourseDetail extends React.Component {
 
-    const [course, setCourse] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
-
-    const authUser = context.authenticatedUser;
+    constructor(props) {
+        super(props);
+        this.state = { 
+            course: null,
+            isLoading: true,
+            errors:[] 
+        };
+    }
 
     /**
      * Get course information with useEffect
      */
-    useEffect(() => {
-        const id = match.params.id;
+    componentDidMount() {
+        const id = this.props.match.params.id
         Axios.get(`${config.apiBaseUrl}/courses/${id}`)
-            .then(response => {
-                if (response) setCourse(response.data)
+        .then(response => {
+            if (response) {
+                this.setState((prevState) => {
+                    return {
+                        course: response.data
+                    }
+                })   
+            }
+        })
+        .catch(err => {
+            console.log('Error fetching data course detail')
+        })
+        .finally(() => {
+            this.setState((prevState) => {
+                return {
+                    isLoading: false
+                }
             })
-            .catch(err => {
-                console.log('Error fetching data course detail')
-            })
-            .finally(() => {
-                setIsLoading(false)
-            })
-    }, [])
+        })
+    }
 
     /**
      * Render estimated Time section if property exists
      */
-    const renderEstimatedTime = () => {
+    renderEstimatedTime = () => {
+        const course = this.state.course;
         if (course.estimatedTime) {
             return (
                 <React.Fragment>
@@ -47,7 +65,8 @@ const CourseDetail = ({ match, context, history }) => {
     /**
      * Render materials needed section if property exists
      */
-    const renderMaterialsNeeded = () => {
+    renderMaterialsNeeded = () => {
+        const course = this.state.course;
         if (course.materialsNeeded) {
             return (
                 <li className="course--stats--list--item">
@@ -63,13 +82,19 @@ const CourseDetail = ({ match, context, history }) => {
     /**
      * Handle Delete Course
      */
-    const handleDeleteCourse = async () => {
+    handleDeleteCourse = async () => {
+        const course = this.state.course;
         try {
-            const response = await context.actions.deleteCourse(course)
+            const response = await this.props.context.actions.deleteCourse(course)
             if (response.length) {
+                this.setState((prevState) => {
+                    return {
+                        errors: response
+                    }
+                })
                 console.log(response)
             } else {
-                history.push('/')
+                this.props.history.push('/')
             }
         } catch (err) {
             console.log('Error deleting a course')
@@ -80,13 +105,15 @@ const CourseDetail = ({ match, context, history }) => {
     /**
      * Render course options (update, delete) if user is authenticated and its owner of course
      */
-    const renderCourseOptions = () => {
+    renderCourseOptions = () => {
+        const authUser = this.props.context.authenticatedUser;
+        const course = this.state.course;
         if ( authUser && authUser.id === course.User.id ) {
             return (
                 <React.Fragment>
                     <span>
-                        <Link className="button" to={`/courses/${match.params.id}/update`}>Update Course</Link>
-                        <Link className="button" to="#" onClick={handleDeleteCourse}>Delete Course</Link>
+                        <Link className="button" to={`/courses/${this.props.match.params.id}/update`}>Update Course</Link>
+                        <Link className="button" to="#" onClick={this.handleDeleteCourse}>Delete Course</Link>
                     </span>
                 </React.Fragment>
             )
@@ -97,7 +124,8 @@ const CourseDetail = ({ match, context, history }) => {
     /**
      * Render course detail
      */
-    const renderCourseDetail = () => {
+    renderCourseDetail = () => {
+        const course = this.state.course;
         return (
             <React.Fragment>
                 <div>
@@ -105,7 +133,7 @@ const CourseDetail = ({ match, context, history }) => {
                         <div className="bounds">
                             <div className="grid-100">
                                 {
-                                    renderCourseOptions()
+                                    this.renderCourseOptions()
                                 }
                                 
                                 <Link className="button button-secondary" to="/">Return to List</Link>
@@ -127,10 +155,10 @@ const CourseDetail = ({ match, context, history }) => {
                             <div className="course--stats">
                                 <ul className="course--stats--list">
                                     {
-                                        renderEstimatedTime()
+                                        this.renderEstimatedTime()
                                     }
                                     {
-                                        renderMaterialsNeeded()
+                                        this.renderMaterialsNeeded()
                                     }
                                 </ul>
                             </div>
@@ -141,15 +169,17 @@ const CourseDetail = ({ match, context, history }) => {
         )
     }
 
-    return(
-        <div>
-            {
-                 isLoading ? 
-                 <div></div>
-                : renderCourseDetail() 
-            }
-        </div>
-    )
+    render() {
+        return(
+            <div>
+                {
+                     this.state.isLoading ? 
+                     <div></div>
+                    : this.renderCourseDetail() 
+                }
+            </div>
+        )
+    }
 }
 
 export default CourseDetail

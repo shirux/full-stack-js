@@ -1,66 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Form from './Form';
 import Axios from 'axios';
 import config from './Context/config'
 
+// = ({ match, context, history }) =>
+class UpdateCourse extends React.Component {
 
-const UpdateCourse  = ({ match, context, history }) => {
+    // const [course, setCourse] = useState({});
+    // const [isLoading, setIsLoading] = useState(true)
+    // const [errors, setErrors] = useState([]);
 
-    const [course, setCourse] = useState({});
-    const [isLoading, setIsLoading] = useState(true)
-    const [errors, setErrors] = useState([]);
-
-    const handleChange = (e) => {
-        const name = e.target.name;
-        setCourse({...course, [name]: e.target.value})
-        
+    constructor(props) {
+        super(props);
+        this.state = { 
+            course: null,
+            isLoading: true,
+            errors:[] 
+        };
     }
 
-    const authUser = context.authenticatedUser;
+    handleChange = (e) => {
+        const name = e.target.name;
+        this.setState((prevState) => {
+            return {
+                course: {
+                    ...this.state.course,
+                    [name]: e.target.value,
+                }
+            }
+        })
+    }
 
-    useEffect(() => {
-        const id = match.params.id
+    componentDidMount() {
+        const id = this.props.match.params.id
         Axios.get(`${config.apiBaseUrl}/courses/${id}`)
             .then(response => {
                 if (response) {
-                    setCourse(response.data)
+                    this.setState((prevState) => {
+                        return {
+                            course: response.data
+                        }
+                    })
                 }
             })
             .catch(err => {
                 console.log('Error fetching data course detail')
             })
             .finally(() => {
-                setIsLoading(false)
+                this.setState((prevState) => {
+                    return {
+                        isLoading: false
+                    }
+                })
             })
-    }, [])
-
-    const cancel = () => {
-        history.push('/')
     }
 
-    const submit = async() => {
+
+    cancel = () => {
+        this.props.history.push('/')
+    }
+
+    submit = async() => {
         try {
-            let response = await context.actions.updateCourse(course)
+            let response = await this.props.context.actions.updateCourse(this.state.course)
             if (response.length) {
-                setErrors(response)
+                this.setState((prevState) => {
+                    return {
+                        errors: response
+                    }
+                })
             } else {
-                history.push('/')
+                this.props.history.push('/')
             }
         } catch(err) {
             console.log('Error updating course')
         }
     }
 
-    const renderUpdateCourseForm = () => {
+    renderUpdateCourseForm = () => {
+        const course = this.state.course;
+        const authUser = this.props.context.authenticatedUser;
         return (
             <div className="bounds course--detail">
                 <h1>Update Course</h1>
                 <div>
                     <Form 
-                        cancel={cancel}
-                        submit={submit}
+                        cancel={this.cancel}
+                        submit={this.submit}
                         submitButtonText="Update Course"
-                        errors={errors}
+                        errors={this.state.errors}
                         elements={() => (
                             <React.Fragment>
                                 <div className="grid-66">
@@ -74,7 +102,7 @@ const UpdateCourse  = ({ match, context, history }) => {
                                                 className="input-title course--title--input" 
                                                 placeholder="Course title..."
                                                 value={course.title}
-                                                onChange={handleChange}
+                                                onChange={this.handleChange}
                                             />
                                         </div>
                                         <p>{`By ${authUser.firstName} ${authUser.lastName}`}</p>
@@ -87,7 +115,7 @@ const UpdateCourse  = ({ match, context, history }) => {
                                                 className="" 
                                                 placeholder="Course description..."
                                                 value={course.description}
-                                                onChange={handleChange}
+                                                onChange={this.handleChange}
                                             />
                                         </div>
                                     </div>
@@ -105,7 +133,7 @@ const UpdateCourse  = ({ match, context, history }) => {
                                                         className="course--time--input" 
                                                         placeholder="Hours" 
                                                         value={course.estimatedTime}
-                                                        onChange={handleChange}
+                                                        onChange={this.handleChange}
                                                     />
                                                 </div>
                                             </li>
@@ -118,7 +146,7 @@ const UpdateCourse  = ({ match, context, history }) => {
                                                         className="" 
                                                         placeholder="List materials..."
                                                         value={course.materialsNeeded}
-                                                        onChange={handleChange}
+                                                        onChange={this.handleChange}
                                                     />
                                                 </div>
                                             </li>
@@ -133,15 +161,18 @@ const UpdateCourse  = ({ match, context, history }) => {
         )
     }
 
-    return(
-        <div>
-            {
-                 isLoading ? 
-                 <div></div>
-                : renderUpdateCourseForm() 
-            }
-        </div>
-    )
+    render() {
+        return(
+            <div>
+                {
+                     this.state.isLoading ? 
+                     <div></div>
+                    : this.renderUpdateCourseForm() 
+                }
+            </div>
+        )
+    }
+    
     
 }
 

@@ -1,7 +1,7 @@
 /**
  * Error component
  */
-export default ({ errors }) => {
+const ErrorDisplay = ({ errors }) => {
     let errorsDisplay = null;
   
     if (errors.length) {
@@ -16,8 +16,7 @@ export default ({ errors }) => {
         </div>
       );
     }
-
-
-  
     return errorsDisplay;
 }
+
+export default ErrorDisplay;
